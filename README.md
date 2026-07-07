@@ -22,6 +22,8 @@ Tento projekt je kostra old-school fantasy FPS ve stylu Hexenu. Renderuje se int
 
 Ve Windows funguje i mouse-look a volitelne leva mys jako fire. Oboji lze menit v [assets/config.txt](assets/config.txt).
 
+Minimapa je nyni lokalni kruhovy vyrez kolem hrace s fog-of-war a lze ji prepinat klavesou M.
+
 Na DOS backendu jsou primarne podporovane klavesy W, A, S, D, Q, E a Esc.
 
 Mapovani klaves i FPS limit lze menit v [assets/config.txt](assets/config.txt).

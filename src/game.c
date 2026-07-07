@@ -158,6 +158,10 @@ static void free_map_tiles(GameState *game)
         free(game->map_tiles);
         game->map_tiles = 0;
     }
+    if (game->map_explored != 0) {
+        free(game->map_explored);
+        game->map_explored = 0;
+    }
     game->map_width = 0;
     game->map_height = 0;
 }
@@ -177,13 +181,16 @@ static int allocate_map_tiles(GameState *game, int width, int height)
 
     free_map_tiles(game);
     game->map_tiles = (int *)malloc(tile_count * sizeof(int));
-    if (game->map_tiles == 0) {
+    game->map_explored = (u8 *)malloc(tile_count * sizeof(u8));
+    if (game->map_tiles == 0 || game->map_explored == 0) {
+        free_map_tiles(game);
         return 0;
     }
 
     game->map_width = width;
     game->map_height = height;
     memset(game->map_tiles, 0, tile_count * sizeof(int));
+    memset(game->map_explored, 0, tile_count * sizeof(u8));
     return 1;
 }
 
@@ -207,6 +214,37 @@ static int raw_map_tile_at(const GameState *game, int x, int y)
         return 1;
     }
     return game->map_tiles[y * game->map_width + x];
+}
+
+static void reveal_minimap_area(GameState *game, double center_x, double center_y, int radius)
+{
+    int tile_x;
+    int tile_y;
+    int x;
+    int y;
+
+    if (game->map_explored == 0 || radius < 0) {
+        return;
+    }
+
+    tile_x = (int)center_x;
+    tile_y = (int)center_y;
+    for (y = tile_y - radius; y <= tile_y + radius; ++y) {
+        for (x = tile_x - radius; x <= tile_x + radius; ++x) {
+            int dx;
+            int dy;
+
+            if (x < 0 || y < 0 || x >= game->map_width || y >= game->map_height) {
+                continue;
+            }
+            dx = x - tile_x;
+            dy = y - tile_y;
+            if ((dx * dx + dy * dy) > (radius * radius)) {
+                continue;
+            }
+            game->map_explored[y * game->map_width + x] = 1;
+        }
+    }
 }
 
 static void free_loaded_rows(char **rows, int row_count)
@@ -1274,9 +1312,11 @@ static void load_scenario(GameState *game, const char *level_path, const char *l
     game->use_was_down = 0;
     game->fire_was_down = 0;
     game->next_weapon_was_down = 0;
+    game->minimap_toggle_was_down = 0;
     game->pending_map_change = 0;
     game->next_level_path[0] = '\0';
     game->next_logic_path[0] = '\0';
+    reveal_minimap_area(game, game->player_x, game->player_y, 5);
     g_current_game = game;
 }
 
@@ -1821,6 +1861,7 @@ void game_init(GameState *game)
     assets_load_manifest("assets/textures.txt");
     ensure_defs_loaded();
     memset(game, 0, sizeof(*game));
+    game->minimap_enabled = 1;
     load_scenario(game, "assets/level.txt", "assets/logic.txt", 0);
 }
 
@@ -1917,6 +1958,12 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
         rotate_player(game, (double)input->mouse_delta_x * mouse_turn_speed * ((double)delta_ms / 16.0));
     }
 
+    reveal_minimap_area(game, game->player_x, game->player_y, 5);
+
+    if (input->toggle_minimap && !game->minimap_toggle_was_down) {
+        game->minimap_enabled = game->minimap_enabled ? 0 : 1;
+    }
+
     if (input->use && !game->use_was_down) {
         if (!try_activate_use_trigger(game)) {
             try_open_door(game);
@@ -1946,6 +1993,7 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
     game->use_was_down = input->use;
     game->fire_was_down = input->fire;
     game->next_weapon_was_down = input->next_weapon;
+    game->minimap_toggle_was_down = input->toggle_minimap;
 }
 
 void game_render(const GameState *game, u8 *framebuffer)

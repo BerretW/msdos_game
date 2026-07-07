@@ -127,81 +127,106 @@ static void draw_outline_rect(u8 *framebuffer, int x0, int y0, int x1, int y1, u
 
 static void draw_minimap(const GameState *game, u8 *framebuffer)
 {
-    int map_w;
-    int map_h;
-    int max_map_size;
+    int radius_tiles;
+    int diameter_tiles;
     int cell_size;
     int map_px_w;
     int map_px_h;
     int origin_x;
     int origin_y;
-    int x;
-    int y;
+    int player_tile_x;
+    int player_tile_y;
+    int rel_x;
+    int rel_y;
 
-    map_w = game->map_width;
-    map_h = game->map_height;
-    if (map_w <= 0 || map_h <= 0) {
+    if (!game->minimap_enabled || game->map_width <= 0 || game->map_height <= 0) {
         return;
     }
 
-    max_map_size = map_w > map_h ? map_w : map_h;
-    cell_size = 2;
-    if (max_map_size <= 24) {
-        cell_size = 4;
-    } else if (max_map_size <= 40) {
-        cell_size = 3;
-    }
-
-    map_px_w = map_w * cell_size;
-    map_px_h = map_h * cell_size;
+    radius_tiles = 8;
+    diameter_tiles = radius_tiles * 2 + 1;
+    cell_size = 4;
+    map_px_w = diameter_tiles * cell_size;
+    map_px_h = diameter_tiles * cell_size;
     origin_x = SCREEN_WIDTH - map_px_w - 6;
     origin_y = 6;
-
-    if (origin_x < 160) {
-        origin_x = 160;
-    }
     if (origin_y + map_px_h + 2 > SCREEN_HEIGHT - 20) {
         return;
     }
 
     draw_outline_rect(framebuffer, origin_x - 2, origin_y - 2, origin_x + map_px_w + 2, origin_y + map_px_h + 2, 220, 16);
 
-    for (y = 0; y < map_h; ++y) {
-        for (x = 0; x < map_w; ++x) {
-            int tile;
+    player_tile_x = (int)game->player_x;
+    player_tile_y = (int)game->player_y;
+
+    for (rel_y = -radius_tiles; rel_y <= radius_tiles; ++rel_y) {
+        for (rel_x = -radius_tiles; rel_x <= radius_tiles; ++rel_x) {
+            int map_x;
+            int map_y;
+            int draw_x;
+            int draw_y;
             u8 color;
 
-            tile = game_map_at(x, y);
-            color = 24;
-            if (tile == TILE_DOOR) {
-                color = 180;
-            } else if (tile != TILE_EMPTY) {
-                color = 88;
+            if ((rel_x * rel_x + rel_y * rel_y) > (radius_tiles * radius_tiles)) {
+                continue;
             }
 
-            draw_rect(
-                framebuffer,
-                origin_x + x * cell_size,
-                origin_y + y * cell_size,
-                origin_x + (x + 1) * cell_size,
-                origin_y + (y + 1) * cell_size,
-                color);
+            map_x = player_tile_x + rel_x;
+            map_y = player_tile_y + rel_y;
+            draw_x = origin_x + (rel_x + radius_tiles) * cell_size;
+            draw_y = origin_y + (rel_y + radius_tiles) * cell_size;
+            color = 8;
+
+            if (map_x >= 0 && map_y >= 0 && map_x < game->map_width && map_y < game->map_height) {
+                if (game->map_explored != 0 && game->map_explored[map_y * game->map_width + map_x]) {
+                    int tile;
+
+                    tile = game_map_at(map_x, map_y);
+                    color = 24;
+                    if (tile == TILE_DOOR) {
+                        color = 180;
+                    } else if (tile != TILE_EMPTY) {
+                        color = 88;
+                    }
+                }
+            }
+
+            draw_rect(framebuffer, draw_x, draw_y, draw_x + cell_size, draw_y + cell_size, color);
         }
     }
 
-    for (x = 0; x < game->sprite_count; ++x) {
+    for (rel_x = 0; rel_x < game->sprite_count; ++rel_x) {
         const SpriteState *sprite;
         int sprite_px;
         int sprite_py;
+        int sprite_tile_x;
+        int sprite_tile_y;
+        int sprite_rel_x;
+        int sprite_rel_y;
         u8 color;
 
-        sprite = &game->sprites[x];
+        sprite = &game->sprites[rel_x];
         if (!sprite->active) {
             continue;
         }
 
-        sprite_px = origin_x + (int)(sprite->x * (double)cell_size);
-        sprite_py = origin_y + (int)(sprite->y * (double)cell_size);
+        sprite_tile_x = (int)sprite->x;
+        sprite_tile_y = (int)sprite->y;
+        if (sprite_tile_x < 0 || sprite_tile_y < 0 || sprite_tile_x >= game->map_width || sprite_tile_y >= game->map_height) {
+            continue;
+        }
+        if (game->map_explored == 0 || !game->map_explored[sprite_tile_y * game->map_width + sprite_tile_x]) {
+            continue;
+        }
+
+        sprite_rel_x = sprite_tile_x - player_tile_x;
+        sprite_rel_y = sprite_tile_y - player_tile_y;
+        if ((sprite_rel_x * sprite_rel_x + sprite_rel_y * sprite_rel_y) > (radius_tiles * radius_tiles)) {
+            continue;
+        }
+
+        sprite_px = origin_x + (sprite_rel_x + radius_tiles) * cell_size;
+        sprite_py = origin_y + (sprite_rel_y + radius_tiles) * cell_size;
         color = sprite->is_enemy ? 248 : 168;
         if (sprite->pickup_key_mask != 0 || sprite->pickup_weapon_id != 0) {
             color = 224;
@@ -219,8 +244,8 @@ static void draw_minimap(const GameState *game, u8 *framebuffer)
         int dir_px;
         int dir_py;
 
-        player_px = origin_x + (int)(game->player_x * (double)cell_size);
-        player_py = origin_y + (int)(game->player_y * (double)cell_size);
+        player_px = origin_x + radius_tiles * cell_size + cell_size / 2;
+        player_py = origin_y + radius_tiles * cell_size + cell_size / 2;
         dir_px = player_px + (int)(game->dir_x * (double)(cell_size * 2));
         dir_py = player_py + (int)(game->dir_y * (double)(cell_size * 2));
 

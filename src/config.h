@@ -7,6 +7,7 @@ typedef enum ConfigKey {
     CONFIG_KEY_A,
     CONFIG_KEY_S,
     CONFIG_KEY_D,
+    CONFIG_KEY_M,
     CONFIG_KEY_Q,
     CONFIG_KEY_E,
     CONFIG_KEY_F,
@@ -33,6 +34,7 @@ typedef struct GameConfig {
     ConfigKey use;
     ConfigKey fire;
     ConfigKey next_weapon;
+    ConfigKey toggle_minimap;
     ConfigKey quit;
 } GameConfig;
 

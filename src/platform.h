@@ -14,6 +14,7 @@ typedef struct PlatformInput {
     int use;
     int fire;
     int next_weapon;
+    int toggle_minimap;
     int mouse_delta_x;
 } PlatformInput;
 

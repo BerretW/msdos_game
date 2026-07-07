@@ -40,6 +40,7 @@ static int key_is_down(ConfigKey key)
     case CONFIG_KEY_A: virtual_key = 'A'; break;
     case CONFIG_KEY_S: virtual_key = 'S'; break;
     case CONFIG_KEY_D: virtual_key = 'D'; break;
+    case CONFIG_KEY_M: virtual_key = 'M'; break;
     case CONFIG_KEY_Q: virtual_key = 'Q'; break;
     case CONFIG_KEY_E: virtual_key = 'E'; break;
     case CONFIG_KEY_F: virtual_key = 'F'; break;
@@ -187,6 +188,7 @@ void platform_poll_input(PlatformInput *input)
     input->use = key_is_down(config->use);
     input->fire = key_is_down(config->fire);
     input->next_weapon = key_is_down(config->next_weapon);
+    input->toggle_minimap = key_is_down(config->toggle_minimap);
     input->mouse_delta_x = 0;
 
     if (config->mouse_fire && (GetAsyncKeyState(VK_LBUTTON) & 0x8000)) {

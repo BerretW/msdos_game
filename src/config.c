@@ -38,6 +38,9 @@ static ConfigKey parse_key_name(const char *name)
     if (strcmp(name, "D") == 0) {
         return CONFIG_KEY_D;
     }
+    if (strcmp(name, "M") == 0) {
+        return CONFIG_KEY_M;
+    }
     if (strcmp(name, "Q") == 0) {
         return CONFIG_KEY_Q;
     }
@@ -95,6 +98,8 @@ static void set_binding(const char *action, ConfigKey key)
         g_config.fire = key;
     } else if (strcmp(action, "next_weapon") == 0) {
         g_config.next_weapon = key;
+    } else if (strcmp(action, "toggle_minimap") == 0) {
+        g_config.toggle_minimap = key;
     } else if (strcmp(action, "quit") == 0) {
         g_config.quit = key;
     }
@@ -116,6 +121,7 @@ static void load_defaults(void)
     g_config.use = CONFIG_KEY_F;
     g_config.fire = CONFIG_KEY_SPACE;
     g_config.next_weapon = CONFIG_KEY_TAB;
+    g_config.toggle_minimap = CONFIG_KEY_M;
     g_config.quit = CONFIG_KEY_ESCAPE;
 }
 

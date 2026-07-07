@@ -21,6 +21,7 @@ static int key_is_down(ConfigKey key)
     case CONFIG_KEY_A: scancode = 30; break;
     case CONFIG_KEY_S: scancode = 31; break;
     case CONFIG_KEY_D: scancode = 32; break;
+    case CONFIG_KEY_M: scancode = 50; break;
     case CONFIG_KEY_Q: scancode = 16; break;
     case CONFIG_KEY_E: scancode = 18; break;
     case CONFIG_KEY_F: scancode = 33; break;
@@ -120,6 +121,7 @@ void platform_poll_input(PlatformInput *input)
     input->use = key_is_down(config->use);
     input->fire = key_is_down(config->fire);
     input->next_weapon = key_is_down(config->next_weapon);
+    input->toggle_minimap = key_is_down(config->toggle_minimap);
     input->mouse_delta_x = 0;
 }
 

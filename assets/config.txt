@@ -14,4 +14,5 @@ bind strafe_right E
 bind use F
 bind fire SPACE
 bind next_weapon TAB
+bind toggle_minimap M
 bind quit ESC

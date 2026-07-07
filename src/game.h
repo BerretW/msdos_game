@@ -86,6 +86,7 @@ typedef struct GameState {
     int map_width;
     int map_height;
     int *map_tiles;
+    u8 *map_explored;
     SpriteState sprites[MAX_SPRITES];
     int sprite_count;
     DoorState doors[MAX_DOORS];
@@ -102,9 +103,11 @@ typedef struct GameState {
     int fps_display;
     int weapon_flash_ms;
     int damage_flash_ms;
+    int minimap_enabled;
     int use_was_down;
     int fire_was_down;
     int next_weapon_was_down;
+    int minimap_toggle_was_down;
     char current_level_path[64];
     char current_logic_path[64];
     int pending_map_change;

@@ -77,11 +77,14 @@ Runtime config je v config.txt:
 - `mouse_look 1`
 - `mouse_fire 1`
 - `mouse_sensitivity 3`
+- `bind toggle_minimap M`
 - `bind forward W`
 - `bind fire SPACE`
-- podporovane klavesy: `W A S D Q E F SPACE TAB ESC UP DOWN LEFT RIGHT`
+- podporovane klavesy: `W A S D M Q E F SPACE TAB ESC UP DOWN LEFT RIGHT`
 
 Mouse-look je zatim implementovany pro Windows backend. DOS backend dal funguje pres klavesnici.
+
+Minimapa je lokalni kruhovy vyrez s fog-of-war, ktery se odhaluje postupne kolem hrace a jde prepinat bindem `toggle_minimap`.
 
 Skript triggeru a actuatoru je v logic.txt. Zakladni format:
 
