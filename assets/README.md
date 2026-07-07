@@ -23,7 +23,11 @@ Aktualne engine pri startu zkousi nacist:
 Kazdy soubor musi mit presne 4096 bajtu.
 Pokud chybi nebo nesedi velikost, engine automaticky prepne na fallback texturu.
 
-Mapa se nyni nacita ze souboru level.txt jako mrizka 16x16 znaku.
+Mapa se nyni nacita ze souboru level.txt podle skutecneho rozmeru souboru.
+
+- kazdy radek je jedna rada mapy
+- sirka mapy se urci podle nejdelsiho radku
+- kratsi radky se doplni jako prazdna pole `.`
 
 - . = prazdne pole
 - 1..4 = steny s texturou 1..4

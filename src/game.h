@@ -83,7 +83,9 @@ typedef struct GameState {
     double dir_y;
     double plane_x;
     double plane_y;
-    int map[MAP_HEIGHT][MAP_WIDTH];
+    int map_width;
+    int map_height;
+    int *map_tiles;
     SpriteState sprites[MAX_SPRITES];
     int sprite_count;
     DoorState doors[MAX_DOORS];

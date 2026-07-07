@@ -37,7 +37,7 @@ Renderer umi nacitat jednoduche paletove textury jako soubory RAW o velikosti 64
 
 Kdyz soubor chybi nebo ma spatnou velikost, engine automaticky pouzije fallback texturu. V demu je fallback zamerne viditelny na casti mapy, aby bylo jasne, ze mechanismus funguje.
 
-Mapa se nacita z assets/level.txt jako 16x16 znakova mrizka. Sprity, pickupy, nepratele, zamcene dvere a trigger body jsou kodovane primo v mape, takze muzes menit layout bez rekompilace.
+Mapa se nacita z assets/level.txt podle skutecneho rozmeru souboru. Kazdy radek je jedna rada mapy, sirka mapy se urci podle nejdelsiho radku a kratsi radky se doplni prazdnymi poli. Sprity, pickupy, nepratele, zamcene dvere a trigger body jsou kodovane primo v mape, takze muzes menit layout bez rekompilace.
 
 Aktualni symboly v mape:
 

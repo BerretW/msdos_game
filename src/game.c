@@ -13,6 +13,9 @@
 #define MAX_ENTITY_DEFS 32
 #define MAX_WEAPON_DEFS 16
 
+#define DEFAULT_MAP_WIDTH 64
+#define DEFAULT_MAP_HEIGHT 64
+
 #define TILE_KIND_EMPTY 0
 #define TILE_KIND_WALL 1
 #define TILE_KIND_DOOR 2
@@ -82,24 +85,253 @@ static int g_default_start_health = 100;
 static int g_default_start_weapon_id = 1;
 static int g_defs_loaded;
 
-static const char *g_default_level[MAP_HEIGHT] = {
-    "1111111111111111",
-    "1..B..H...4Y...1",
-    "1T.2...L..4.E..1",
-    "1..2......4....1",
-    "1..2..111.4....1",
-    "1..2..1...4.K..1",
-    "1..2..1.B....M.1",
-    "1......1....E..1",
-    "1......1.......1",
-    "1......1...11111",
-    "1......1.......1",
-    "1..333.1.......1",
-    "1..3...1....T..1",
-    "1P.333.........1",
-    "1..............1",
-    "1111111111111111"
+static const char *g_default_level[DEFAULT_MAP_HEIGHT] = {
+    "1111111111111111111111111111111111111111111111111111111111111111",
+    "1...............2...............3...............4..............1",
+    "1.111111111111..2...44444444444.3.4444444444444.4..............1",
+    "1.1..........1..2...4.........4.3.4...........4.4..............1",
+    "1.1.B.....H..1..2...4.........4.3.4...........4.4..............1",
+    "1.1..........1..2...4.........4.3.4.........H.4.4..............1",
+    "1.11111T111111......4...B.....4.3.4...Y.......4.4..............1",
+    "1...............2...4.........4.3.4...........4.4..............1",
+    "1222.222.222.22222224.........42324...........424222222222222221",
+    "1...............2...4.........4.3.4...........4.4..............1",
+    "1..11111.11111..2...4......E.............K....4.4..............1",
+    "1..1.........1..2...4.M.......4.3.4...........4.4..............1",
+    "1..1..E......1..2...4.........4.3.4...........4.4..............1",
+    "1..1.........1..2...4.........4.3.4...........4.4..............1",
+    "1..1.........1..2...44444444444.3.444444.444444................1",
+    "1..1....D....1..2...............3...............4..............1",
+    "1..1.........1..2...............3...............4..............1",
+    "1..1......M..1..2...............3...............4..............1",
+    "1..1............................3...............4.33333333333..1",
+    "1..1.........1..2...............3...............4.3.........3..1",
+    "1..11111111111..2...............3...............4.3.........3..1",
+    "1...............2...............3...............4.3....B....3..1",
+    "1...............2...............................4.3...1.1...3..1",
+    "1...............2...............3...............4.3.........3..1",
+    "12222222222222222222.2222222.22232222222.2222222423.....W...3221",
+    "1...............2...............3...............4.3.........3..1",
+    "1...............2....2222222222222222222.2222...4.3...1.1...3..1",
+    "1...............2...2.......................2...4.3.........3..1",
+    "1...............2...2.....................M.2...4.3..E......3..1",
+    "1...............2...2...1...1.......1...1...2...4.3.........3..1",
+    "1...............2...2...E.................................H.3..1",
+    "1...............2...2.......................2...4...........3..1",
+    "1...............2...2...........B...........2...4...........3..1",
+    "1...............2...2.......................2...4...........3..1",
+    "1...................2...................K...2...4..3333333333..1",
+    "1...............2...2...1...1.......1...1...2...4..............1",
+    "1...............2...2.H.....................2...4..............1",
+    "1...............2...2.......................2...4..............1",
+    "1...............2...2222222222222222222222222...4..3333333333..1",
+    "1...............2...............3...............4.3.........3..1",
+    "133333333333333323333333333333333333.3333333.333433.........3331",
+    "1...............2...............3...............4.3.......M.3..1",
+    "1...............2...............3.4444444444444...3...1.1...3..1",
+    "1...............2...............3.4...........4.4.3.........3..1",
+    "1...............2...............3.4...........4.4.3.........3..1",
+    "1...............2...............3.4........K..4.4.3....K....3..1",
+    "1...............................3.4...........4.4.3.........3..1",
+    "1...............2...............3.L.....T...................3..1",
+    "1...............2...............3.4...........4.4.....1.1...3..1",
+    "1...............2...............3.4...H.......4.4...E.......3..1",
+    "1...............2.................4...........4.4...........3..1",
+    "1...............2...............3.4...........4.4...........3..1",
+    "1...............2...............3.4444444444444.4..3.33333333..1",
+    "1...............2...............3...............4..............1",
+    "14444444444444442444444444444444344444444444444444.4.44444.44441",
+    "1...............2...............3...............4..............1",
+    "1.11111.1111111.2.1111111111111.3...............4..............1",
+    "1.1...........1.2.1...........1.3..............................1",
+    "1.1....H...W............B......................................1",
+    "1.1.P.........1.2.1..M.....E..1.3...............4..............1",
+    "1.1...........1.2.1...........1.3...............4..............1",
+    "1.1111111111111.2.1111111111111.3...............4..............1",
+    "1...............2...............3...............4..............1",
+    "1111111111111111111111111111111111111111111111111111111111111111"
 };
+
+static void free_map_tiles(GameState *game)
+{
+    if (game->map_tiles != 0) {
+        free(game->map_tiles);
+        game->map_tiles = 0;
+    }
+    game->map_width = 0;
+    game->map_height = 0;
+}
+
+static int allocate_map_tiles(GameState *game, int width, int height)
+{
+    size_t tile_count;
+
+    if (width <= 0 || height <= 0) {
+        return 0;
+    }
+
+    tile_count = (size_t)width * (size_t)height;
+    if (tile_count / (size_t)width != (size_t)height) {
+        return 0;
+    }
+
+    free_map_tiles(game);
+    game->map_tiles = (int *)malloc(tile_count * sizeof(int));
+    if (game->map_tiles == 0) {
+        return 0;
+    }
+
+    game->map_width = width;
+    game->map_height = height;
+    memset(game->map_tiles, 0, tile_count * sizeof(int));
+    return 1;
+}
+
+static void set_map_tile(GameState *game, int x, int y, int tile)
+{
+    if (game->map_tiles == 0) {
+        return;
+    }
+    if (x < 0 || y < 0 || x >= game->map_width || y >= game->map_height) {
+        return;
+    }
+    game->map_tiles[y * game->map_width + x] = tile;
+}
+
+static int raw_map_tile_at(const GameState *game, int x, int y)
+{
+    if (game->map_tiles == 0) {
+        return 1;
+    }
+    if (x < 0 || y < 0 || x >= game->map_width || y >= game->map_height) {
+        return 1;
+    }
+    return game->map_tiles[y * game->map_width + x];
+}
+
+static void free_loaded_rows(char **rows, int row_count)
+{
+    int i;
+
+    if (rows == 0) {
+        return;
+    }
+
+    for (i = 0; i < row_count; ++i) {
+        free(rows[i]);
+    }
+    free(rows);
+}
+
+static int append_loaded_row(char ***rows, int *row_count, int *row_capacity, const char *line, int line_length)
+{
+    char **new_rows;
+    char *row_copy;
+
+    if (*row_count >= *row_capacity) {
+        int new_capacity;
+
+        new_capacity = *row_capacity > 0 ? (*row_capacity * 2) : 8;
+        new_rows = (char **)realloc(*rows, (size_t)new_capacity * sizeof(char *));
+        if (new_rows == 0) {
+            return 0;
+        }
+        *rows = new_rows;
+        *row_capacity = new_capacity;
+    }
+
+    row_copy = (char *)malloc((size_t)line_length + 1);
+    if (row_copy == 0) {
+        return 0;
+    }
+
+    if (line_length > 0) {
+        memcpy(row_copy, line, (size_t)line_length);
+    }
+    row_copy[line_length] = '\0';
+    (*rows)[*row_count] = row_copy;
+    ++(*row_count);
+    return 1;
+}
+
+static int load_level_rows(FILE *file, char ***rows_out, int *width_out, int *height_out)
+{
+    char **rows;
+    char *line_buffer;
+    int row_count;
+    int row_capacity;
+    int line_length;
+    int line_capacity;
+    int max_width;
+    int c;
+
+    rows = 0;
+    line_buffer = 0;
+    row_count = 0;
+    row_capacity = 0;
+    line_length = 0;
+    line_capacity = 0;
+    max_width = 0;
+
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '\r') {
+            continue;
+        }
+
+        if (c == '\n') {
+            if (!append_loaded_row(&rows, &row_count, &row_capacity, line_buffer, line_length)) {
+                free(line_buffer);
+                free_loaded_rows(rows, row_count);
+                return 0;
+            }
+            if (line_length > max_width) {
+                max_width = line_length;
+            }
+            line_length = 0;
+            continue;
+        }
+
+        if (line_length + 1 >= line_capacity) {
+            char *new_buffer;
+            int new_capacity;
+
+            new_capacity = line_capacity > 0 ? (line_capacity * 2) : 32;
+            new_buffer = (char *)realloc(line_buffer, (size_t)new_capacity);
+            if (new_buffer == 0) {
+                free(line_buffer);
+                free_loaded_rows(rows, row_count);
+                return 0;
+            }
+            line_buffer = new_buffer;
+            line_capacity = new_capacity;
+        }
+
+        line_buffer[line_length++] = (char)c;
+    }
+
+    if (line_length > 0 || row_count == 0) {
+        if (!append_loaded_row(&rows, &row_count, &row_capacity, line_buffer, line_length)) {
+            free(line_buffer);
+            free_loaded_rows(rows, row_count);
+            return 0;
+        }
+        if (line_length > max_width) {
+            max_width = line_length;
+        }
+    }
+
+    free(line_buffer);
+
+    if (row_count <= 0 || max_width <= 0) {
+        free_loaded_rows(rows, row_count);
+        return 0;
+    }
+
+    *rows_out = rows;
+    *width_out = max_width;
+    *height_out = row_count;
+    return 1;
+}
 
 static FILE *open_data_file(const char *path, char *resolved_path)
 {
@@ -647,8 +879,6 @@ static void ensure_defs_loaded(void)
 static void reset_runtime_arrays(GameState *game)
 {
     int i;
-    int x;
-    int y;
 
     game->sprite_count = 0;
     game->door_count = 0;
@@ -662,12 +892,6 @@ static void reset_runtime_arrays(GameState *game)
     game->dir_y = 0.0;
     game->plane_x = 0.0;
     game->plane_y = 0.66;
-
-    for (y = 0; y < MAP_HEIGHT; ++y) {
-        for (x = 0; x < MAP_WIDTH; ++x) {
-            game->map[y][x] = TILE_EMPTY;
-        }
-    }
 
     for (i = 0; i < MAX_SPRITES; ++i) {
         memset(&game->sprites[i], 0, sizeof(game->sprites[i]));
@@ -746,12 +970,12 @@ static void apply_level_cell(GameState *game, int x, int y, char cell)
     tile_def = find_tile_def(cell);
     if (tile_def != 0) {
         if (tile_def->kind == TILE_KIND_EMPTY) {
-            game->map[y][x] = TILE_EMPTY;
+            set_map_tile(game, x, y, TILE_EMPTY);
         } else if (tile_def->kind == TILE_KIND_WALL) {
-            game->map[y][x] = tile_def->texture_id;
+            set_map_tile(game, x, y, tile_def->texture_id);
         } else if (tile_def->kind == TILE_KIND_DOOR) {
             add_door(game, x, y, tile_def->key_mask);
-            game->map[y][x] = TILE_DOOR;
+            set_map_tile(game, x, y, TILE_DOOR);
         } else if (tile_def->kind == TILE_KIND_START) {
             game->player_x = (double)x + 0.5;
             game->player_y = (double)y + 0.5;
@@ -795,9 +1019,14 @@ static void set_default_map(GameState *game)
     int x;
     int y;
 
+    if (!allocate_map_tiles(game, DEFAULT_MAP_WIDTH, DEFAULT_MAP_HEIGHT)) {
+        free_map_tiles(game);
+        return;
+    }
+
     reset_runtime_arrays(game);
-    for (y = 0; y < MAP_HEIGHT; ++y) {
-        for (x = 0; x < MAP_WIDTH; ++x) {
+    for (y = 0; y < DEFAULT_MAP_HEIGHT; ++y) {
+        for (x = 0; x < DEFAULT_MAP_WIDTH; ++x) {
             apply_level_cell(game, x, y, g_default_level[y][x]);
         }
     }
@@ -806,8 +1035,10 @@ static void set_default_map(GameState *game)
 static void load_level_file_named(GameState *game, const char *path)
 {
     FILE *file;
+    char **rows;
     char resolved_path[260];
-    char line[64];
+    int width;
+    int height;
     int x;
     int y;
 
@@ -817,26 +1048,36 @@ static void load_level_file_named(GameState *game, const char *path)
         return;
     }
 
-    reset_runtime_arrays(game);
-    for (y = 0; y < MAP_HEIGHT; ++y) {
-        if (fgets(line, sizeof(line), file) == 0) {
-            fclose(file);
-            set_default_map(game);
-            return;
-        }
+    rows = 0;
+    width = 0;
+    height = 0;
+    if (!load_level_rows(file, &rows, &width, &height)) {
+        fclose(file);
+        set_default_map(game);
+        return;
+    }
+    fclose(file);
 
-        for (x = 0; x < MAP_WIDTH; ++x) {
+    if (!allocate_map_tiles(game, width, height)) {
+        free_loaded_rows(rows, height);
+        set_default_map(game);
+        return;
+    }
+
+    reset_runtime_arrays(game);
+    for (y = 0; y < height; ++y) {
+        int row_length;
+
+        row_length = (int)strlen(rows[y]);
+        for (x = 0; x < width; ++x) {
             char cell;
 
-            cell = line[x];
-            if (cell == '\0' || cell == '\n' || cell == '\r') {
-                cell = '.';
-            }
+            cell = x < row_length ? rows[y][x] : '.';
             apply_level_cell(game, x, y, cell);
         }
     }
 
-    fclose(file);
+    free_loaded_rows(rows, height);
 }
 
 static void add_trigger(GameState *game, int id, int mode, int map_x, int map_y, int target_id, int once)
@@ -1725,11 +1966,11 @@ int game_map_at(int x, int y)
     if (g_current_game == 0) {
         return 1;
     }
-    if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
+    if (x < 0 || y < 0 || x >= g_current_game->map_width || y >= g_current_game->map_height) {
         return 1;
     }
 
-    tile = g_current_game->map[y][x];
+    tile = raw_map_tile_at(g_current_game, x, y);
     if (tile == TILE_DOOR) {
         const DoorState *door;
 

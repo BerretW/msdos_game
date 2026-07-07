@@ -8,8 +8,6 @@
 #define TEXELS_PER_TEXTURE (TEX_SIZE * TEX_SIZE)
 #define MAX_TEXTURES 16
 #define MAX_AMMO_TYPES 8
-#define MAP_WIDTH 16
-#define MAP_HEIGHT 16
 #define MAX_SPRITES 40
 #define MAX_DOORS 16
 #define MAX_TRIGGERS 24
