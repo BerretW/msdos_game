@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS-DOS Game Level Editor</title>
+    <style>
+        :root {
+            --bg: #11161d;
+            --panel: rgba(19, 28, 39, 0.9);
+            --panel-strong: rgba(11, 17, 25, 0.96);
+            --line: rgba(138, 172, 205, 0.22);
+            --text: #eef3f7;
+            --muted: #91a6ba;
+            --accent: #ffcf5c;
+            --good: #82d28b;
+            --danger: #ff6a63;
+            --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+            --cell-size: 18px;
+            --font-ui: "Trebuchet MS", "Segoe UI", sans-serif;
+            --font-mono: "Consolas", "Courier New", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: var(--font-ui);
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(255, 138, 61, 0.2), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(255, 207, 92, 0.16), transparent 34%),
+                linear-gradient(160deg, #0c1117 0%, #111822 48%, #161119 100%);
+        }
+
+        .shell {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 18px;
+            padding: 18px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 16px;
+            overflow: auto;
+        }
+
+        .brand {
+            padding: 16px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255, 138, 61, 0.16), rgba(255, 207, 92, 0.08));
+            border: 1px solid rgba(255, 207, 92, 0.24);
+        }
+
+        .brand h1 {
+            margin: 0 0 8px;
+            font-size: 1.45rem;
+            letter-spacing: 0.04em;
+        }
+
+        .brand p,
+        .hint,
+        .status,
+        .field-row label,
+        .legend small,
+        .meta,
+        .logic-note,
+        .card-note {
+            color: var(--muted);
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .section h2 {
+            margin: 0;
+            font-size: 0.92rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .field-grid,
+        .actions,
+        .legend,
+        .logic-stacks,
+        .card-grid,
+        .mini-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .field-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .field-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        input,
+        button,
+        textarea,
+        select {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(9, 14, 22, 0.86);
+            color: var(--text);
+            font: inherit;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+        }
+
+        button {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 207, 92, 0.45);
+            background: rgba(23, 33, 46, 0.96);
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, rgba(255, 138, 61, 0.34), rgba(255, 207, 92, 0.18));
+            border-color: rgba(255, 207, 92, 0.35);
+        }
+
+        .actions,
+        .mini-actions {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .palette button {
+            display: grid;
+            place-items: center;
+            min-height: 58px;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .palette button.active {
+            outline: 2px solid var(--accent);
+            border-color: rgba(255, 207, 92, 0.7);
+        }
+
+        .swatch-label {
+            position: absolute;
+            bottom: 5px;
+            right: 7px;
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            opacity: 0.7;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            overflow: hidden;
+        }
+
+        .workspace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            background: var(--panel-strong);
+        }
+
+        .workspace-header h2 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .workspace-header .meta {
+            font-size: 0.92rem;
+        }
+
+        .grid-shell {
+            padding: 18px;
+            overflow: auto;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1px;
+            justify-content: start;
+            align-content: start;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1px;
+            border-radius: 12px;
+            width: fit-content;
+            user-select: none;
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: grid;
+            place-items: center;
+            background: #10161f;
+        }
+
+        .cell:hover {
+            transform: none;
+            border-color: transparent;
+            filter: brightness(1.1);
+        }
+
+        .workspace-footer {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 300px;
+            gap: 14px;
+            padding: 14px 18px 18px;
+            border-top: 1px solid var(--line);
+            background: rgba(8, 13, 20, 0.88);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: var(--font-mono);
+            line-height: 1.25;
+        }
+
+        .legend {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .legend-item,
+        .logic-card {
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logic-stacks {
+            grid-template-columns: 1fr;
+            max-height: 480px;
+            overflow: auto;
+        }
+
+        .logic-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .logic-card h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+
+        .card-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card-grid.wide {
+            grid-template-columns: 1fr;
+        }
+
+        .logic-note.bad {
+            color: var(--danger);
+        }
+
+        .status {
+            min-height: 1.2em;
+        }
+
+        .good {
+            color: var(--good);
+        }
+
+        .danger {
+            color: var(--danger);
+        }
+
+        @media (max-width: 1400px) {
+            .workspace-footer {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <aside class="panel sidebar">
+            <div class="brand">
+                <h1>Level + Logic Editor</h1>
+                <p>Editor pro mapy i logic.txt. Marker T se umistuje do mapy, zatimco triggery a actuatory se vazi samostatne v logice.</p>
+            </div>
+
+            <section class="section">
+                <h2>Soubor mapy</h2>
+                <div class="actions">
+                    <button id="openFileButton" class="button-primary">Otevrit level</button>
+                    <button id="saveFileButton" class="button-primary">Ulozit level</button>
+                    <button id="downloadButton">Stahnout level</button>
+                    <button id="copyButton">Kopirovat level</button>
+                </div>
+                <input id="fileInput" type="file" accept=".txt,text/plain" hidden>
+            </section>
+
+            <section class="section">
+                <h2>Soubor logiky</h2>
+                <div class="actions">
+                    <button id="openLogicButton" class="button-primary">Otevrit logic</button>
+                    <button id="saveLogicButton" class="button-primary">Ulozit logic</button>
+                    <button id="downloadLogicButton">Stahnout logic</button>
+                    <button id="copyLogicButton">Kopirovat logic</button>
+                </div>
+                <div class="mini-actions">
+                    <button id="newLogicButton">Nova logika</button>
+                    <button id="syncCursorButton">Kurzor do formularu</button>
+                </div>
+                <input id="logicFileInput" type="file" accept=".txt,text/plain" hidden>
+                <div class="status" id="statusText"></div>
+            </section>
+
+            <section class="section">
+                <h2>Mapa</h2>
+                <div class="field-grid">
+                    <div class="field-row">
+                        <label for="widthInput">Sirka</label>
+                        <input id="widthInput" type="number" min="1" max="256" value="64">
+                    </div>
+                    <div class="field-row">
+                        <label for="heightInput">Vyska</label>
+                        <input id="heightInput" type="number" min="1" max="256" value="64">
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="resizeButton">Zmenit rozmer</button>
+                    <button id="newMapButton">Nova 64x64</button>
+                    <button id="clearButton">Vycistit mapu</button>
+                    <button id="frameButton">Ram zdi</button>
+                </div>
+                <p class="hint">Pri zmene rozmeru se obsah zachova vlevo nahore. Prave tlacitko maze na .</p>
+            </section>
+
+            <section class="section">
+                <h2>Logicke uzly</h2>
+                <div class="actions">
+                    <button id="addTriggerButton">Pridat trigger</button>
+                    <button id="addActuatorButton">Pridat actuator</button>
+                    <button id="sortLogicButton">Seskupit podle ID</button>
+                    <button id="validateLogicButton">Zkontrolovat T markery</button>
+                </div>
+                <p class="logic-note">Trigger souradnice by mely mirit na T v mape. MAP actuator pouziva dve cesty: level a logic.</p>
+            </section>
+
+            <section class="section">
+                <h2>Paleta</h2>
+                <div class="palette" id="palette"></div>
+            </section>
+        </aside>
+
+        <main class="panel workspace">
+            <header class="workspace-header">
+                <div>
+                    <h2>Pracovni plocha</h2>
+                    <div class="meta" id="selectionMeta">Aktivni symbol: .</div>
+                </div>
+                <div class="meta" id="cursorMeta">Kurzor: -, -</div>
+            </header>
+
+            <div class="grid-shell">
+                <div id="grid" class="grid"></div>
+            </div>
+
+            <footer class="workspace-footer">
+                <div class="section">
+                    <h2>Export mapy</h2>
+                    <textarea id="exportText" spellcheck="false"></textarea>
+                    <p class="hint">Zmena textu mapy a odkliknuti mimo pole provede znovunacteni mrizky.</p>
+                </div>
+
+                <div class="section">
+                    <h2>Logika</h2>
+                    <textarea id="logicText" spellcheck="false"></textarea>
+                    <div class="logic-stacks" id="logicStacks"></div>
+                </div>
+
+                <div class="section">
+                    <h2>Legenda</h2>
+                    <div class="legend" id="legend"></div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const SYMBOLS = [
+            { symbol: '.', label: 'prazdno', color: '#0f1720', ink: '#7d8ca0' },
+            { symbol: '1', label: 'stena 1', color: '#5b4631', ink: '#f7ddb2' },
+            { symbol: '2', label: 'stena 2', color: '#39566e', ink: '#d8f3ff' },
+            { symbol: '3', label: 'stena 3', color: '#52673b', ink: '#e4ffb7' },
+            { symbol: '4', label: 'stena 4', color: '#694152', ink: '#ffd2e4' },
+            { symbol: 'D', label: 'dvere', color: '#8f6d29', ink: '#fff0b2' },
+            { symbol: 'L', label: 'zamcene dvere', color: '#b36c22', ink: '#fff0c7' },
+            { symbol: 'P', label: 'start', color: '#2f7f77', ink: '#d8fffa' },
+            { symbol: 'B', label: 'dekorace', color: '#48505f', ink: '#f6f7fb' },
+            { symbol: 'E', label: 'nepritel', color: '#7d2431', ink: '#ffe0e0' },
+            { symbol: 'K', label: 'rytir', color: '#4e1f70', ink: '#f4deff' },
+            { symbol: 'H', label: 'health', color: '#1d6b3e', ink: '#d8ffe7' },
+            { symbol: 'M', label: 'ammo', color: '#365d89', ink: '#e0f0ff' },
+            { symbol: 'Y', label: 'zluty klic', color: '#aa8920', ink: '#fff6c9' },
+            { symbol: 'W', label: 'zbran', color: '#8c4734', ink: '#ffe0d6' },
+            { symbol: 'T', label: 'trigger marker', color: '#8b2f2f', ink: '#ffe9cc' }
+        ];
+
+        const TRIGGER_MODES = ['USE', 'ENTER'];
+        const ACTUATOR_TYPES = ['DOOR', 'SPAWN', 'MAP', 'HEAL', 'AMMO', 'KEY', 'GIVE_WEAPON'];
+        const symbolMap = new Map(SYMBOLS.map((item) => [item.symbol, item]));
+
+        const state = {
+            width: 64,
+            height: 64,
+            grid: [],
+            brush: '.',
+            isPainting: false,
+            saveHandle: null,
+            logicSaveHandle: null,
+            cursorX: -1,
+            cursorY: -1,
+            logic: {
+                triggers: [],
+                actuators: []
+            }
+        };
+
+        const gridElement = document.getElementById('grid');
+        const paletteElement = document.getElementById('palette');
+        const legendElement = document.getElementById('legend');
+        const exportText = document.getElementById('exportText');
+        const logicText = document.getElementById('logicText');
+        const logicStacks = document.getElementById('logicStacks');
+        const selectionMeta = document.getElementById('selectionMeta');
+        const cursorMeta = document.getElementById('cursorMeta');
+        const statusText = document.getElementById('statusText');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const fileInput = document.getElementById('fileInput');
+        const logicFileInput = document.getElementById('logicFileInput');
+
+        function setStatus(message, tone = '') {
+            statusText.textContent = message;
+            statusText.className = `status ${tone}`.trim();
+        }
+
+        function createBlankGrid(width, height, fill = '.') {
+            return Array.from({ length: height }, () => Array.from({ length: width }, () => fill));
+        }
+
+        function normalizeInt(value, fallback = 0) {
+            const parsed = Number.parseInt(value, 10);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        }
+
+        function nextTriggerId() {
+            let max = 0;
+            for (const trigger of state.logic.triggers) {
+                const numeric = normalizeInt(String(trigger.id).replace(/^T/i, ''), 0);
+                if (numeric > max) {
+                    max = numeric;
+                }
+            }
+            return `T${max + 1}`;
+        }
+
+        function nextActuatorId() {
+            let max = 0;
+            for (const actuator of state.logic.actuators) {
+                const numeric = normalizeInt(String(actuator.target).replace(/^A/i, ''), 0);
+                if (numeric > max) {
+                    max = numeric;
+                }
+            }
+            return `A${max + 1}`;
+        }
+
+        function ensureSinglePlayerStart(x, y) {
+            if (state.brush !== 'P') {
+                return;
+            }
+            for (let row = 0; row < state.height; row += 1) {
+                for (let col = 0; col < state.width; col += 1) {
+                    if ((col !== x || row !== y) && state.grid[row][col] === 'P') {
+                        state.grid[row][col] = '.';
+                    }
+                }
+            }
+        }
+
+        function isTriggerMarkerAt(x, y) {
+            return y >= 0 && y < state.height && x >= 0 && x < state.width && state.grid[y][x] === 'T';
+        }
+
+        function findTriggerIndexAt(x, y) {
+            return state.logic.triggers.findIndex((trigger) => trigger.x === x && trigger.y === y);
+        }
+
+        function syncTriggerForMarkerChange(x, y, oldSymbol, newSymbol) {
+            const triggerIndex = findTriggerIndexAt(x, y);
+
+            if (oldSymbol !== 'T' && newSymbol === 'T') {
+                if (triggerIndex < 0) {
+                    state.logic.triggers.push({
+                        id: nextTriggerId(),
+                        mode: 'USE',
+                        x,
+                        y,
+                        target: nextActuatorId(),
+                        once: 0
+                    });
+                    setStatus(`Pro marker T na ${x}, ${y} byl vytvoren trigger.`, 'good');
+                }
+                return;
+            }
+
+            if (oldSymbol === 'T' && newSymbol !== 'T' && triggerIndex >= 0) {
+                state.logic.triggers.splice(triggerIndex, 1);
+                setStatus(`Trigger na ${x}, ${y} byl odstraneny, protoze marker T zmizel.`, 'good');
+            }
+        }
+
+        function updateMeta() {
+            exportText.value = serializeLevel();
+            selectionMeta.textContent = `Aktivni symbol: ${state.brush} · ${symbolMap.get(state.brush).label}`;
+            cursorMeta.textContent = state.cursorX >= 0 ? `Kurzor: ${state.cursorX}, ${state.cursorY}` : 'Kurzor: -, -';
+        }
+
+        function serializeLevel() {
+            return state.grid.map((row) => row.join('')).join('\n');
+        }
+
+        function cellStyle(symbol) {
+            const item = symbolMap.get(symbol) || symbolMap.get('.');
+            return `background:${item.color};color:${item.ink};`;
+        }
+
+        function renderPalette() {
+            paletteElement.innerHTML = '';
+            legendElement.innerHTML = '';
+
+            for (const item of SYMBOLS) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.symbol = item.symbol;
+                button.className = item.symbol === state.brush ? 'active' : '';
+                button.setAttribute('style', cellStyle(item.symbol));
+                button.innerHTML = `${item.symbol}<span class="swatch-label">${item.label}</span>`;
+                button.addEventListener('click', () => {
+                    state.brush = item.symbol;
+                    renderPalette();
+                    updateMeta();
+                });
+                paletteElement.appendChild(button);
+
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `<strong>${item.symbol}</strong><br><small>${item.label}</small>`;
+                legendElement.appendChild(legendItem);
+            }
+        }
+
+        function paintCell(x, y, symbol = state.brush) {
+            const oldSymbol = state.grid[y][x];
+
+            if (x < 0 || y < 0 || x >= state.width || y >= state.height) {
+                return;
+            }
+            if (symbol === 'P') {
+                ensureSinglePlayerStart(x, y);
+            }
+            state.grid[y][x] = symbol;
+            syncTriggerForMarkerChange(x, y, oldSymbol, symbol);
+            const cell = gridElement.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (cell) {
+                cell.textContent = symbol;
+                cell.setAttribute('style', cellStyle(symbol));
+            }
+            updateMeta();
+            renderLogicEditor();
+        }
+
+        function renderGrid() {
+            gridElement.innerHTML = '';
+            gridElement.style.gridTemplateColumns = `repeat(${state.width}, var(--cell-size))`;
+
+            for (let y = 0; y < state.height; y += 1) {
+                for (let x = 0; x < state.width; x += 1) {
+                    const symbol = state.grid[y][x];
+                    const cell = document.createElement('button');
+                    cell.type = 'button';
+                    cell.className = 'cell';
+                    cell.dataset.x = String(x);
+                    cell.dataset.y = String(y);
+                    cell.textContent = symbol;
+                    cell.setAttribute('style', cellStyle(symbol));
+                    cell.addEventListener('pointerdown', (event) => {
+                        event.preventDefault();
+                        state.isPainting = true;
+                        window.__eraseMode = event.button === 2;
+                        paintCell(x, y, event.button === 2 ? '.' : state.brush);
+                    });
+                    cell.addEventListener('pointerenter', () => {
+                        state.cursorX = x;
+                        state.cursorY = y;
+                        updateMeta();
+                        if (state.isPainting) {
+                            paintCell(x, y, window.__eraseMode ? '.' : state.brush);
+                        }
+                    });
+                    cell.addEventListener('contextmenu', (event) => event.preventDefault());
+                    gridElement.appendChild(cell);
+                }
+            }
+
+            updateMeta();
+        }
+
+        function resetMap(width, height) {
+            state.width = width;
+            state.height = height;
+            state.grid = createBlankGrid(width, height);
+            widthInput.value = String(width);
+            heightInput.value = String(height);
+            renderGrid();
+            setStatus(`Nova mapa ${width}x${height} je pripravena.`, 'good');
+        }
+
+        function resizeMap(width, height) {
+            const resized = createBlankGrid(width, height);
+            for (let y = 0; y < Math.min(state.height, height); y += 1) {
+                for (let x = 0; x < Math.min(state.width, width); x += 1) {
+                    resized[y][x] = state.grid[y][x];
+                }
+            }
+            state.width = width;
+            state.height = height;
+            state.grid = resized;
+            renderGrid();
+            setStatus(`Mapa ma nove rozmery ${width}x${height}.`, 'good');
+        }
+
+        function frameWalls() {
+            for (let x = 0; x < state.width; x += 1) {
+                state.grid[0][x] = '1';
+                state.grid[state.height - 1][x] = '1';
+            }
+            for (let y = 0; y < state.height; y += 1) {
+                state.grid[y][0] = '1';
+                state.grid[y][state.width - 1] = '1';
+            }
+            renderGrid();
+            setStatus('Okraj mapy byl obehnan stenou 1.', 'good');
+        }
+
+        function parseLevelText(text) {
+            const normalized = text.replace(/\r/g, '');
+            const lines = normalized.split('\n').filter((line, index, all) => !(index === all.length - 1 && line === ''));
+            if (lines.length === 0) {
+                throw new Error('Soubor je prazdny.');
+            }
+
+            const width = lines.reduce((max, line) => Math.max(max, line.length), 0);
+            const height = lines.length;
+            const nextGrid = createBlankGrid(width, height);
+
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const symbol = lines[y][x] || '.';
+                    nextGrid[y][x] = symbolMap.has(symbol) ? symbol : '.';
+                }
+            }
+
+            state.width = width;
+            state.height = height;
+            state.grid = nextGrid;
+            widthInput.value = String(width);
+            heightInput.value = String(height);
+            renderGrid();
+        }
+
+        function emptyLogic() {
+            state.logic = { triggers: [], actuators: [] };
+        }
+
+        function parseLogicText(text) {
+            const triggers = [];
+            const actuators = [];
+            const lines = text.replace(/\r/g, '').split('\n');
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line || line.startsWith('#') || line.startsWith(';')) {
+                    continue;
+                }
+
+                const tokens = line.split(/\s+/);
+                if (tokens[0] === 'TRIGGER' && tokens.length >= 7) {
+                    triggers.push({
+                        id: tokens[1],
+                        mode: tokens[2],
+                        x: normalizeInt(tokens[3], 0),
+                        y: normalizeInt(tokens[4], 0),
+                        target: tokens[5],
+                        once: normalizeInt(tokens[6], 0)
+                    });
+                    continue;
+                }
+
+                if (tokens[0] === 'ACTUATOR' && tokens.length >= 4) {
+                    const base = { target: tokens[1], type: tokens[2] };
+                    switch (tokens[2]) {
+                    case 'DOOR':
+                        actuators.push({ ...base, x: normalizeInt(tokens[3], 0), y: normalizeInt(tokens[4], 0), hold: normalizeInt(tokens[5], 2400) });
+                        break;
+                    case 'SPAWN':
+                        actuators.push({ ...base, x: normalizeInt(tokens[3], 0), y: normalizeInt(tokens[4], 0), symbol: tokens[5] || 'E' });
+                        break;
+                    case 'MAP':
+                        actuators.push({ ...base, levelPath: tokens[3] || 'assets/level2.txt', logicPath: tokens[4] || 'assets/logic2.txt' });
+                        break;
+                    case 'HEAL':
+                        actuators.push({ ...base, value: normalizeInt(tokens[3], 10) });
+                        break;
+                    case 'AMMO':
+                        actuators.push({ ...base, ammoType: normalizeInt(tokens[3], 1), value: normalizeInt(tokens[4], 4) });
+                        break;
+                    case 'KEY':
+                        actuators.push({ ...base, keyMask: normalizeInt(tokens[3], 1) });
+                        break;
+                    case 'GIVE_WEAPON':
+                        actuators.push({ ...base, weaponId: normalizeInt(tokens[3], 1) });
+                        break;
+                    default:
+                        actuators.push({ ...base, rawArgs: tokens.slice(3).join(' ') });
+                        break;
+                    }
+                }
+            }
+
+            state.logic = { triggers, actuators };
+            renderLogicEditor();
+        }
+
+        function serializeLogic() {
+            const lines = [
+                '# Logic editor export',
+                '# TRIGGER <Tn> <USE|ENTER> <map_x> <map_y> <An> <once>',
+                '# ACTUATOR <An> DOOR <map_x> <map_y> <hold_ms>',
+                '# ACTUATOR <An> SPAWN <map_x> <map_y> <symbol>',
+                '# ACTUATOR <An> MAP <level_path> <logic_path>',
+                '# ACTUATOR <An> HEAL <value>',
+                '# ACTUATOR <An> AMMO <ammo_type_id> <value>',
+                '# ACTUATOR <An> KEY <mask>',
+                '# ACTUATOR <An> GIVE_WEAPON <weapon_id>',
+                ''
+            ];
+
+            for (const trigger of state.logic.triggers) {
+                lines.push(`TRIGGER ${trigger.id} ${trigger.mode} ${normalizeInt(trigger.x, 0)} ${normalizeInt(trigger.y, 0)} ${trigger.target} ${normalizeInt(trigger.once, 0)}`);
+            }
+
+            if (state.logic.triggers.length && state.logic.actuators.length) {
+                lines.push('');
+            }
+
+            for (const actuator of state.logic.actuators) {
+                switch (actuator.type) {
+                case 'DOOR':
+                    lines.push(`ACTUATOR ${actuator.target} DOOR ${normalizeInt(actuator.x, 0)} ${normalizeInt(actuator.y, 0)} ${normalizeInt(actuator.hold, 2400)}`);
+                    break;
+                case 'SPAWN':
+                    lines.push(`ACTUATOR ${actuator.target} SPAWN ${normalizeInt(actuator.x, 0)} ${normalizeInt(actuator.y, 0)} ${actuator.symbol || 'E'}`);
+                    break;
+                case 'MAP':
+                    lines.push(`ACTUATOR ${actuator.target} MAP ${actuator.levelPath || 'assets/level2.txt'} ${actuator.logicPath || 'assets/logic2.txt'}`);
+                    break;
+                case 'HEAL':
+                    lines.push(`ACTUATOR ${actuator.target} HEAL ${normalizeInt(actuator.value, 10)}`);
+                    break;
+                case 'AMMO':
+                    lines.push(`ACTUATOR ${actuator.target} AMMO ${normalizeInt(actuator.ammoType, 1)} ${normalizeInt(actuator.value, 4)}`);
+                    break;
+                case 'KEY':
+                    lines.push(`ACTUATOR ${actuator.target} KEY ${normalizeInt(actuator.keyMask, 1)}`);
+                    break;
+                case 'GIVE_WEAPON':
+                    lines.push(`ACTUATOR ${actuator.target} GIVE_WEAPON ${normalizeInt(actuator.weaponId, 1)}`);
+                    break;
+                default:
+                    lines.push(`ACTUATOR ${actuator.target} ${actuator.type} ${actuator.rawArgs || ''}`.trim());
+                    break;
+                }
+            }
+
+            return lines.join('\n');
+        }
+
+        function createInputField(label, value, onChange, type = 'text') {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'field-row';
+            const labelElement = document.createElement('label');
+            labelElement.textContent = label;
+            const input = document.createElement(type === 'select' ? 'select' : 'input');
+
+            if (type === 'select') {
+                for (const optionValue of value.options) {
+                    const option = document.createElement('option');
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    if (optionValue === value.current) {
+                        option.selected = true;
+                    }
+                    input.appendChild(option);
+                }
+            } else {
+                input.type = type;
+                input.value = value;
+            }
+
+            input.addEventListener('change', () => onChange(input.value));
+            wrapper.appendChild(labelElement);
+            wrapper.appendChild(input);
+            return wrapper;
+        }
+
+        function renderTriggerCard(trigger, index) {
+            const card = document.createElement('div');
+            card.className = 'logic-card';
+            const title = document.createElement('h3');
+            title.textContent = `Trigger ${index + 1}`;
+            const grid = document.createElement('div');
+            grid.className = 'card-grid';
+            const actions = document.createElement('div');
+            actions.className = 'mini-actions';
+            const note = document.createElement('div');
+
+            grid.appendChild(createInputField('ID', trigger.id, (value) => {
+                trigger.id = value || nextTriggerId();
+                renderLogicEditor();
+            }));
+            grid.appendChild(createInputField('Mode', { current: trigger.mode, options: TRIGGER_MODES }, (value) => {
+                trigger.mode = value;
+                renderLogicEditor();
+            }, 'select'));
+            grid.appendChild(createInputField('X', String(trigger.x), (value) => {
+                trigger.x = normalizeInt(value, 0);
+                renderLogicEditor();
+            }, 'number'));
+            grid.appendChild(createInputField('Y', String(trigger.y), (value) => {
+                trigger.y = normalizeInt(value, 0);
+                renderLogicEditor();
+            }, 'number'));
+            grid.appendChild(createInputField('Target', trigger.target, (value) => {
+                trigger.target = value || nextActuatorId();
+                renderLogicEditor();
+            }));
+            grid.appendChild(createInputField('Once', String(trigger.once), (value) => {
+                trigger.once = normalizeInt(value, 0) ? 1 : 0;
+                renderLogicEditor();
+            }, 'number'));
+
+            const useCursor = document.createElement('button');
+            useCursor.type = 'button';
+            useCursor.textContent = 'Pouzit kurzor';
+            useCursor.addEventListener('click', () => {
+                if (state.cursorX >= 0) {
+                    trigger.x = state.cursorX;
+                    trigger.y = state.cursorY;
+                    renderLogicEditor();
+                }
+            });
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = 'Smazat';
+            remove.addEventListener('click', () => {
+                state.logic.triggers.splice(index, 1);
+                renderLogicEditor();
+            });
+
+            actions.appendChild(useCursor);
+            actions.appendChild(remove);
+
+            note.className = `logic-note ${isTriggerMarkerAt(trigger.x, trigger.y) ? '' : 'bad'}`.trim();
+            note.textContent = isTriggerMarkerAt(trigger.x, trigger.y)
+                ? 'Souradnice miri na T marker v mape.'
+                : 'Na techto souradnicich ted neni T marker.';
+
+            card.appendChild(title);
+            card.appendChild(grid);
+            card.appendChild(actions);
+            card.appendChild(note);
+            return card;
+        }
+
+        function renderActuatorFields(actuator, card) {
+            const grid = document.createElement('div');
+            grid.className = actuator.type === 'MAP' ? 'card-grid wide' : 'card-grid';
+
+            function addField(label, prop, fallback, type = 'number') {
+                grid.appendChild(createInputField(label, String(actuator[prop] ?? fallback), (value) => {
+                    actuator[prop] = type === 'number' ? normalizeInt(value, fallback) : value;
+                    renderLogicEditor();
+                }, type));
+            }
+
+            switch (actuator.type) {
+            case 'DOOR':
+                addField('X', 'x', 0);
+                addField('Y', 'y', 0);
+                addField('Hold ms', 'hold', 2400);
+                break;
+            case 'SPAWN':
+                addField('X', 'x', 0);
+                addField('Y', 'y', 0);
+                grid.appendChild(createInputField('Symbol', { current: actuator.symbol || 'E', options: SYMBOLS.map((item) => item.symbol).filter((symbol) => symbol !== '.') }, (value) => {
+                    actuator.symbol = value;
+                    renderLogicEditor();
+                }, 'select'));
+                break;
+            case 'MAP':
+                addField('Level path', 'levelPath', 'assets/level2.txt', 'text');
+                addField('Logic path', 'logicPath', 'assets/logic2.txt', 'text');
+                break;
+            case 'HEAL':
+                addField('Value', 'value', 15);
+                break;
+            case 'AMMO':
+                addField('Ammo type', 'ammoType', 1);
+                addField('Value', 'value', 4);
+                break;
+            case 'KEY':
+                addField('Mask', 'keyMask', 1);
+                break;
+            case 'GIVE_WEAPON':
+                addField('Weapon ID', 'weaponId', 1);
+                break;
+            default:
+                addField('Raw args', 'rawArgs', '', 'text');
+                break;
+            }
+
+            card.appendChild(grid);
+        }
+
+        function renderActuatorCard(actuator, index) {
+            const card = document.createElement('div');
+            card.className = 'logic-card';
+            const title = document.createElement('h3');
+            title.textContent = `Actuator ${index + 1}`;
+            const grid = document.createElement('div');
+            grid.className = 'card-grid';
+            const actions = document.createElement('div');
+            actions.className = 'mini-actions';
+            const note = document.createElement('div');
+            note.className = 'card-note';
+
+            grid.appendChild(createInputField('Target', actuator.target, (value) => {
+                actuator.target = value || nextActuatorId();
+                renderLogicEditor();
+            }));
+            grid.appendChild(createInputField('Type', { current: actuator.type, options: ACTUATOR_TYPES }, (value) => {
+                actuator.type = value;
+                if (value === 'DOOR') {
+                    actuator.x = actuator.x ?? 0;
+                    actuator.y = actuator.y ?? 0;
+                    actuator.hold = actuator.hold ?? 2400;
+                } else if (value === 'SPAWN') {
+                    actuator.x = actuator.x ?? 0;
+                    actuator.y = actuator.y ?? 0;
+                    actuator.symbol = actuator.symbol || 'E';
+                } else if (value === 'MAP') {
+                    actuator.levelPath = actuator.levelPath || 'assets/level2.txt';
+                    actuator.logicPath = actuator.logicPath || 'assets/logic2.txt';
+                }
+                renderLogicEditor();
+            }, 'select'));
+
+            const useCursor = document.createElement('button');
+            useCursor.type = 'button';
+            useCursor.textContent = 'Pouzit kurzor';
+            useCursor.addEventListener('click', () => {
+                if (state.cursorX >= 0 && (actuator.type === 'DOOR' || actuator.type === 'SPAWN')) {
+                    actuator.x = state.cursorX;
+                    actuator.y = state.cursorY;
+                    renderLogicEditor();
+                }
+            });
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = 'Smazat';
+            remove.addEventListener('click', () => {
+                state.logic.actuators.splice(index, 1);
+                renderLogicEditor();
+            });
+
+            actions.appendChild(useCursor);
+            actions.appendChild(remove);
+
+            note.textContent = actuator.type === 'MAP'
+                ? 'Prechod mezi mapami uz engine podporuje.'
+                : 'Target musi odpovidat nekteremu trigger.target.';
+
+            card.appendChild(title);
+            card.appendChild(grid);
+            renderActuatorFields(actuator, card);
+            card.appendChild(actions);
+            card.appendChild(note);
+            return card;
+        }
+
+        function renderLogicEditor() {
+            logicText.value = serializeLogic();
+            logicStacks.innerHTML = '';
+
+            const triggerSection = document.createElement('div');
+            triggerSection.className = 'section';
+            const triggerHeading = document.createElement('h2');
+            triggerHeading.textContent = `Triggery (${state.logic.triggers.length})`;
+            triggerSection.appendChild(triggerHeading);
+            for (let i = 0; i < state.logic.triggers.length; i += 1) {
+                triggerSection.appendChild(renderTriggerCard(state.logic.triggers[i], i));
+            }
+            if (state.logic.triggers.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'logic-note';
+                empty.textContent = 'Zatim tu neni zadny trigger.';
+                triggerSection.appendChild(empty);
+            }
+
+            const actuatorSection = document.createElement('div');
+            actuatorSection.className = 'section';
+            const actuatorHeading = document.createElement('h2');
+            actuatorHeading.textContent = `Actuatory (${state.logic.actuators.length})`;
+            actuatorSection.appendChild(actuatorHeading);
+            for (let i = 0; i < state.logic.actuators.length; i += 1) {
+                actuatorSection.appendChild(renderActuatorCard(state.logic.actuators[i], i));
+            }
+            if (state.logic.actuators.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'logic-note';
+                empty.textContent = 'Zatim tu neni zadny actuator.';
+                actuatorSection.appendChild(empty);
+            }
+
+            logicStacks.appendChild(triggerSection);
+            logicStacks.appendChild(actuatorSection);
+        }
+
+        async function openFromPicker(kind) {
+            const pickerTitle = kind === 'logic' ? 'Logic text' : 'Level text';
+            if ('showOpenFilePicker' in window) {
+                const [handle] = await window.showOpenFilePicker({
+                    multiple: false,
+                    types: [{ description: pickerTitle, accept: { 'text/plain': ['.txt'] } }]
+                });
+                const file = await handle.getFile();
+                const text = await file.text();
+                if (kind === 'logic') {
+                    state.logicSaveHandle = handle;
+                    parseLogicText(text);
+                } else {
+                    state.saveHandle = handle;
+                    parseLevelText(text);
+                }
+                setStatus(`Nacten soubor ${file.name}.`, 'good');
+                return;
+            }
+
+            if (kind === 'logic') {
+                logicFileInput.click();
+            } else {
+                fileInput.click();
+            }
+        }
+
+        async function saveToPicker(kind) {
+            const content = kind === 'logic' ? serializeLogic() : serializeLevel();
+            const suggestedName = kind === 'logic' ? 'logic.txt' : 'level.txt';
+            if ('showSaveFilePicker' in window) {
+                const handleKey = kind === 'logic' ? 'logicSaveHandle' : 'saveHandle';
+                if (!state[handleKey]) {
+                    state[handleKey] = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{ description: 'Text file', accept: { 'text/plain': ['.txt'] } }]
+                    });
+                }
+                const writable = await state[handleKey].createWritable();
+                await writable.write(content);
+                await writable.close();
+                setStatus(`${kind === 'logic' ? 'Logika' : 'Level'} byl ulozen primo do souboru.`, 'good');
+                return;
+            }
+
+            downloadText(kind, content);
+        }
+
+        function downloadText(kind, content) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = kind === 'logic' ? 'logic.txt' : 'level.txt';
+            anchor.click();
+            URL.revokeObjectURL(url);
+            setStatus(`${kind === 'logic' ? 'Logika' : 'Level'} byl stazen jako .txt.`, 'good');
+        }
+
+        async function copyToClipboard(kind) {
+            try {
+                await navigator.clipboard.writeText(kind === 'logic' ? serializeLogic() : serializeLevel());
+                setStatus(`${kind === 'logic' ? 'Text logiky' : 'Text mapy'} je ve schrance.`, 'good');
+            } catch (error) {
+                setStatus(`Kopirovani selhalo: ${error.message}`, 'danger');
+            }
+        }
+
+        function addTrigger() {
+            state.logic.triggers.push({ id: nextTriggerId(), mode: 'USE', x: Math.max(state.cursorX, 0), y: Math.max(state.cursorY, 0), target: nextActuatorId(), once: 0 });
+            renderLogicEditor();
+            setStatus('Trigger byl pridan.', 'good');
+        }
+
+        function addActuator() {
+            state.logic.actuators.push({ target: nextActuatorId(), type: 'DOOR', x: Math.max(state.cursorX, 0), y: Math.max(state.cursorY, 0), hold: 2400 });
+            renderLogicEditor();
+            setStatus('Actuator byl pridan.', 'good');
+        }
+
+        function sortLogic() {
+            state.logic.triggers.sort((a, b) => String(a.id).localeCompare(String(b.id), 'cs', { numeric: true }));
+            state.logic.actuators.sort((a, b) => String(a.target).localeCompare(String(b.target), 'cs', { numeric: true }));
+            renderLogicEditor();
+            setStatus('Logika byla seskupena podle ID.', 'good');
+        }
+
+        function validateLogicMarkers() {
+            const missing = state.logic.triggers.filter((trigger) => !isTriggerMarkerAt(trigger.x, trigger.y));
+            if (missing.length === 0) {
+                setStatus('Vsechny triggery maji T marker na svych souradnicich.', 'good');
+            } else {
+                setStatus(`Chybi T marker pro ${missing.length} trigger(y).`, 'danger');
+            }
+            renderLogicEditor();
+        }
+
+        function syncCursorIntoLogic() {
+            if (state.cursorX < 0) {
+                setStatus('Nejdriv najezd kurzorem na policko v mape.', 'danger');
+                return;
+            }
+            if (state.logic.triggers.length > 0) {
+                state.logic.triggers[state.logic.triggers.length - 1].x = state.cursorX;
+                state.logic.triggers[state.logic.triggers.length - 1].y = state.cursorY;
+            }
+            if (state.logic.actuators.length > 0) {
+                const last = state.logic.actuators[state.logic.actuators.length - 1];
+                if (last.type === 'DOOR' || last.type === 'SPAWN') {
+                    last.x = state.cursorX;
+                    last.y = state.cursorY;
+                }
+            }
+            renderLogicEditor();
+            setStatus('Posledni trigger a pozicni actuator dostaly souradnice kurzoru.', 'good');
+        }
+
+        document.getElementById('openFileButton').addEventListener('click', async () => {
+            try {
+                await openFromPicker('level');
+            } catch (error) {
+                if (error && error.name !== 'AbortError') {
+                    setStatus(`Otevirani levelu selhalo: ${error.message}`, 'danger');
+                }
+            }
+        });
+
+        document.getElementById('saveFileButton').addEventListener('click', async () => {
+            try {
+                await saveToPicker('level');
+            } catch (error) {
+                if (error && error.name !== 'AbortError') {
+                    setStatus(`Ukladani levelu selhalo: ${error.message}`, 'danger');
+                }
+            }
+        });
+
+        document.getElementById('downloadButton').addEventListener('click', () => downloadText('level', serializeLevel()));
+        document.getElementById('copyButton').addEventListener('click', () => copyToClipboard('level'));
+
+        document.getElementById('openLogicButton').addEventListener('click', async () => {
+            try {
+                await openFromPicker('logic');
+            } catch (error) {
+                if (error && error.name !== 'AbortError') {
+                    setStatus(`Otevirani logiky selhalo: ${error.message}`, 'danger');
+                }
+            }
+        });
+
+        document.getElementById('saveLogicButton').addEventListener('click', async () => {
+            try {
+                await saveToPicker('logic');
+            } catch (error) {
+                if (error && error.name !== 'AbortError') {
+                    setStatus(`Ukladani logiky selhalo: ${error.message}`, 'danger');
+                }
+            }
+        });
+
+        document.getElementById('downloadLogicButton').addEventListener('click', () => downloadText('logic', serializeLogic()));
+        document.getElementById('copyLogicButton').addEventListener('click', () => copyToClipboard('logic'));
+        document.getElementById('newLogicButton').addEventListener('click', () => {
+            emptyLogic();
+            renderLogicEditor();
+            setStatus('Nova prazdna logika je pripravena.', 'good');
+        });
+        document.getElementById('syncCursorButton').addEventListener('click', syncCursorIntoLogic);
+
+        document.getElementById('resizeButton').addEventListener('click', () => {
+            const width = Math.max(1, Math.min(256, Number(widthInput.value) || state.width));
+            const height = Math.max(1, Math.min(256, Number(heightInput.value) || state.height));
+            resizeMap(width, height);
+        });
+
+        document.getElementById('newMapButton').addEventListener('click', () => resetMap(64, 64));
+        document.getElementById('clearButton').addEventListener('click', () => {
+            state.grid = createBlankGrid(state.width, state.height);
+            renderGrid();
+            setStatus('Mapa byla vycistena.', 'good');
+        });
+        document.getElementById('frameButton').addEventListener('click', frameWalls);
+
+        document.getElementById('addTriggerButton').addEventListener('click', addTrigger);
+        document.getElementById('addActuatorButton').addEventListener('click', addActuator);
+        document.getElementById('sortLogicButton').addEventListener('click', sortLogic);
+        document.getElementById('validateLogicButton').addEventListener('click', validateLogicMarkers);
+
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            parseLevelText(await file.text());
+            state.saveHandle = null;
+            setStatus(`Nacten soubor ${file.name}.`, 'good');
+            fileInput.value = '';
+        });
+
+        logicFileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            parseLogicText(await file.text());
+            state.logicSaveHandle = null;
+            setStatus(`Nacten soubor ${file.name}.`, 'good');
+            logicFileInput.value = '';
+        });
+
+        exportText.addEventListener('change', () => {
+            try {
+                parseLevelText(exportText.value);
+                setStatus('Textovy export mapy byl znovu nacten.', 'good');
+            } catch (error) {
+                setStatus(`Text mapy nelze nacist: ${error.message}`, 'danger');
+            }
+        });
+
+        logicText.addEventListener('change', () => {
+            try {
+                parseLogicText(logicText.value);
+                setStatus('Textovy export logiky byl znovu nacten.', 'good');
+            } catch (error) {
+                setStatus(`Text logiky nelze nacist: ${error.message}`, 'danger');
+            }
+        });
+
+        document.addEventListener('pointerup', () => {
+            state.isPainting = false;
+            window.__eraseMode = false;
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === '[') {
+                const current = Number(getComputedStyle(document.documentElement).getPropertyValue('--cell-size').replace('px', '')) || 18;
+                document.documentElement.style.setProperty('--cell-size', `${Math.max(12, current - 2)}px`);
+            }
+            if (event.key === ']') {
+                const current = Number(getComputedStyle(document.documentElement).getPropertyValue('--cell-size').replace('px', '')) || 18;
+                document.documentElement.style.setProperty('--cell-size', `${Math.min(30, current + 2)}px`);
+            }
+        });
+
+        renderPalette();
+        resetMap(64, 64);
+        frameWalls();
+        emptyLogic();
+        renderLogicEditor();
+        setStatus('Editor je pripraveny. Otevri level.txt a logic.txt nebo zacni od nuly.', 'good');
+    </script>
+</body>
+</html>

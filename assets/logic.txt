@@ -1,4 +1,4 @@
-# Trigger/actuator demo for level 1
+# Logic editor export
 # TRIGGER <Tn> <USE|ENTER> <map_x> <map_y> <An> <once>
 # ACTUATOR <An> DOOR <map_x> <map_y> <hold_ms>
 # ACTUATOR <An> SPAWN <map_x> <map_y> <symbol>
@@ -8,9 +8,6 @@
 # ACTUATOR <An> KEY <mask>
 # ACTUATOR <An> GIVE_WEAPON <weapon_id>
 
-TRIGGER T1 USE 7 6 A1 0
-ACTUATOR A1 DOOR 8 15 3200
-ACTUATOR A1 SPAWN 10 15 E
+TRIGGER T1 USE 14 1 A1 0
 
-TRIGGER T2 ENTER 40 47 A2 1
-ACTUATOR A2 MAP assets/level2.txt assets/logic2.txt
+ACTUATOR A1 MAP assets/level2.txt assets/logic2.txt

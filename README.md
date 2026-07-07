@@ -111,8 +111,23 @@ Po uspesnem buildu vznikne `build\hexwin.exe`.
 
 - `src/` sdileny engine a platformni backandy
 - `assets/` budoucni textury
+- `tools/level_editor.html` samostatny editor map bez zavislosti
 - `build_dos.bat` DOS build
 - `build_win.bat` Windows build
+
+## Level Editor
+
+V [tools/level_editor.html](tools/level_editor.html) je jednoduchy editor pro mapy a logic.txt ve stejnem textovem formatu, ktery engine nacita.
+
+- umi otevrit a ulozit `level.txt`
+- umi otevrit a ulozit `logic.txt`
+- umi menit rozmery mapy
+- umi malovat vsechny podporovane symboly
+- umi pridavat, upravovat a mazat triggery i actuatory
+- umi exportovat text mapy i logiky nebo je rovnou ulozit do souboru
+- umi kontrolovat, jestli trigger souradnice opravdu miri na `T` marker v mape
+
+Ve Windows staci soubor otevrit v Edge nebo Chrome. Pokud prohlizec podporuje File System Access API, umi editor ukladat primo zpet do souboru.
 
 ## Dalsi logicke kroky
 
