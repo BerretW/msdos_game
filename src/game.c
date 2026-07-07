@@ -30,6 +30,8 @@
 #define KEY_NONE 0
 #define KEY_YELLOW 1
 
+#define PLAYER_COLLISION_RADIUS 0.2
+
 typedef struct TileDef {
     int active;
     char symbol;
@@ -1047,6 +1049,23 @@ static int is_blocked(double x, double y)
     return game_map_at(map_x, map_y) != TILE_EMPTY;
 }
 
+static int can_move_player_to(double x, double y)
+{
+    if (is_blocked(x - PLAYER_COLLISION_RADIUS, y - PLAYER_COLLISION_RADIUS)) {
+        return 0;
+    }
+    if (is_blocked(x + PLAYER_COLLISION_RADIUS, y - PLAYER_COLLISION_RADIUS)) {
+        return 0;
+    }
+    if (is_blocked(x - PLAYER_COLLISION_RADIUS, y + PLAYER_COLLISION_RADIUS)) {
+        return 0;
+    }
+    if (is_blocked(x + PLAYER_COLLISION_RADIUS, y + PLAYER_COLLISION_RADIUS)) {
+        return 0;
+    }
+    return 1;
+}
+
 static int line_hits_wall(const GameState *game, double x0, double y0, double x1, double y1)
 {
     double dx;
@@ -1600,10 +1619,10 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
 
         next_x = game->player_x + game->dir_x * move_speed;
         next_y = game->player_y + game->dir_y * move_speed;
-        if (!is_blocked(next_x, game->player_y)) {
+        if (can_move_player_to(next_x, game->player_y)) {
             game->player_x = next_x;
         }
-        if (!is_blocked(game->player_x, next_y)) {
+        if (can_move_player_to(game->player_x, next_y)) {
             game->player_y = next_y;
         }
     }
@@ -1613,10 +1632,10 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
 
         next_x = game->player_x - game->dir_x * move_speed;
         next_y = game->player_y - game->dir_y * move_speed;
-        if (!is_blocked(next_x, game->player_y)) {
+        if (can_move_player_to(next_x, game->player_y)) {
             game->player_x = next_x;
         }
-        if (!is_blocked(game->player_x, next_y)) {
+        if (can_move_player_to(game->player_x, next_y)) {
             game->player_y = next_y;
         }
     }
@@ -1626,10 +1645,10 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
 
         next_x = game->player_x - strafe_x * move_speed;
         next_y = game->player_y - strafe_y * move_speed;
-        if (!is_blocked(next_x, game->player_y)) {
+        if (can_move_player_to(next_x, game->player_y)) {
             game->player_x = next_x;
         }
-        if (!is_blocked(game->player_x, next_y)) {
+        if (can_move_player_to(game->player_x, next_y)) {
             game->player_y = next_y;
         }
     }
@@ -1639,10 +1658,10 @@ void game_update(GameState *game, const PlatformInput *input, u32 delta_ms)
 
         next_x = game->player_x + strafe_x * move_speed;
         next_y = game->player_y + strafe_y * move_speed;
-        if (!is_blocked(next_x, game->player_y)) {
+        if (can_move_player_to(next_x, game->player_y)) {
             game->player_x = next_x;
         }
-        if (!is_blocked(game->player_x, next_y)) {
+        if (can_move_player_to(game->player_x, next_y)) {
             game->player_y = next_y;
         }
     }

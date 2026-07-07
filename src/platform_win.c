@@ -149,6 +149,10 @@ void platform_shutdown(void)
 void platform_poll_input(PlatformInput *input)
 {
     const GameConfig *config;
+    int turn_left_down;
+    int turn_right_down;
+    int strafe_left_down;
+    int strafe_right_down;
     MSG msg;
 
     memset(input, 0, sizeof(*input));
@@ -162,13 +166,24 @@ void platform_poll_input(PlatformInput *input)
     }
 
     config = config_get();
+    turn_left_down = key_is_down(config->turn_left);
+    turn_right_down = key_is_down(config->turn_right);
+    strafe_left_down = key_is_down(config->strafe_left);
+    strafe_right_down = key_is_down(config->strafe_right);
     input->quit = key_is_down(config->quit);
     input->forward = key_is_down(config->forward);
     input->backward = key_is_down(config->backward);
-    input->turn_left = key_is_down(config->turn_left);
-    input->turn_right = key_is_down(config->turn_right);
-    input->strafe_left = key_is_down(config->strafe_left);
-    input->strafe_right = key_is_down(config->strafe_right);
+    if (config->mouse_look) {
+        input->turn_left = 0;
+        input->turn_right = 0;
+        input->strafe_left = strafe_left_down || turn_left_down;
+        input->strafe_right = strafe_right_down || turn_right_down;
+    } else {
+        input->turn_left = turn_left_down;
+        input->turn_right = turn_right_down;
+        input->strafe_left = strafe_left_down;
+        input->strafe_right = strafe_right_down;
+    }
     input->use = key_is_down(config->use);
     input->fire = key_is_down(config->fire);
     input->next_weapon = key_is_down(config->next_weapon);
