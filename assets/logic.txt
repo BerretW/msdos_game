@@ -1,0 +1,16 @@
+# Trigger/actuator demo for level 1
+# TRIGGER <Tn> <USE|ENTER> <map_x> <map_y> <An> <once>
+# ACTUATOR <An> DOOR <map_x> <map_y> <hold_ms>
+# ACTUATOR <An> SPAWN <map_x> <map_y> <symbol>
+# ACTUATOR <An> MAP <level_path> <logic_path>
+# ACTUATOR <An> HEAL <value>
+# ACTUATOR <An> AMMO <ammo_type_id> <value>
+# ACTUATOR <An> KEY <mask>
+# ACTUATOR <An> GIVE_WEAPON <weapon_id>
+
+TRIGGER T1 USE 1 2 A1 0
+ACTUATOR A1 DOOR 7 2 2400
+ACTUATOR A1 SPAWN 13 2 E
+
+TRIGGER T2 ENTER 12 13 A2 1
+ACTUATOR A2 MAP assets/level2.txt assets/logic2.txt

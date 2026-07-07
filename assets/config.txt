@@ -1,0 +1,17 @@
+# engine config
+fps_cap 144
+mouse_look 1
+mouse_fire 1
+mouse_sensitivity 3
+
+# bind <action> <key>
+bind forward W
+bind backward S
+bind turn_left A
+bind turn_right D
+bind strafe_left Q
+bind strafe_right E
+bind use F
+bind fire SPACE
+bind next_weapon TAB
+bind quit ESC

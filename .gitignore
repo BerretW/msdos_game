@@ -1,0 +1,16 @@
+build/
+*.err
+*.obj
+*.o
+*.exe
+*.map
+*.bak
+*.log
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.tmp
+*.swp
+Thumbs.db
+Desktop.ini

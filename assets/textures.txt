@@ -1,0 +1,17 @@
+# format: <texture_id> <filename>
+# add your own 64x64 palettized RAW files here
+1 wall01.raw
+2 wall02.raw
+3 wall03.raw
+4 wall04.raw
+5 sprite_barrel.raw
+6 sprite_enemy.raw
+7 door01.raw
+8 pickup_health.raw
+9 sprite_knight.raw
+10 pickup_ammo.raw
+11 pickup_key.raw
+12 trigger_button.raw
+13 exit_marker.raw
+14 pickup_weapon.raw
+15 projectile.raw

@@ -1,0 +1,9 @@
+# symbol kind texture_id health touch_damage speed_milli pickup_health pickup_ammo pickup_ammo_type_id pickup_key_mask pickup_weapon_id ai_mode alert_range_milli attack_range_milli attack_cooldown_ms
+B DECOR 5 1 0 0 0 0 0 0 0 NONE 0 0 0
+E ENEMY 6 3 10 1100 0 0 0 0 0 MELEE 4800 1400 800
+K ENEMY 9 6 16 1450 0 0 0 0 0 RANGED 6200 2400 1100
+H PICKUP 8 1 0 0 25 0 0 0 0 NONE 0 0 0
+M PICKUP 10 1 0 0 0 6 2 0 0 NONE 0 0 0
+Y PICKUP 11 1 0 0 0 0 0 1 0 NONE 0 0 0
+T MARKER 12 1 0 0 0 0 0 0 0 NONE 0 0 0
+W PICKUP 14 1 0 0 0 6 2 0 2 NONE 0 0 0

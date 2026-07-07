@@ -1,0 +1,3 @@
+# global game defaults
+start_health 100
+start_weapon 1
